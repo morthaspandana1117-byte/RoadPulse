@@ -70,7 +70,21 @@ export const IncidentReportingView: React.FC = () => {
     'Significant slope failure on eastern hillside. Rocks and thick clay slurry obstructing major northbound lane. Single line passage barely feasible.'
   );
   const [photoUrl, setPhotoUrl] = useState<string>(SAMPLE_PHOTOS[0].url);
-  const [submittedBanner, setSubmittedBanner] = useState<{ id: string; offline: boolean } | null>(null);
+  const [submittedBanner, setSubmittedBanner] = useState<{ id: string; offline: boolean; message: string } | null>(null);
+
+  // File upload handler
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setPhotoUrl(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Auto GPS coordinates simulator
   const handleAutoGPS = () => {
@@ -106,11 +120,18 @@ export const IncidentReportingView: React.FC = () => {
     setSubmittedBanner({
       id: `rep-${Date.now().toString().slice(-4)}`,
       offline: !isOnline,
+      message: !isOnline 
+        ? "Report saved offline and will synchronize when connectivity returns." 
+        : "Report submitted successfully and added to the Verification Center queue as 'Pending Verification'."
     });
+
+    // Reset form fields
+    setDescription('');
+    setBlockagePercent(50);
 
     setTimeout(() => {
       setSubmittedBanner(null);
-    }, 4500);
+    }, 5500);
   };
 
   return (
@@ -126,10 +147,10 @@ export const IncidentReportingView: React.FC = () => {
             <span className="text-xs text-slate-400">STAGE 2: REPORT</span>
           </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Ground Incident Capture & Offline-First Buffer
+            Incident Reporting
           </h1>
           <p className="text-xs text-slate-300 mt-1 max-w-3xl">
-            Empowers field patrols, logistics drivers, and local citizens to submit geo-tagged hazard reports even in remote zero-network valleys with automated synchronization upon telemetry restoration.
+            Submit and track real-world road condition reports.
           </p>
         </div>
 
@@ -170,12 +191,10 @@ export const IncidentReportingView: React.FC = () => {
             )}
             <div>
               <h4 className="font-bold text-xs uppercase tracking-wider">
-                {submittedBanner.offline ? 'Report Cached Offline (Queued for Sync)' : 'Report Uploaded Successfully'}
+                {submittedBanner.offline ? 'Saved Offline' : 'Report Submitted'}
               </h4>
-              <p className="text-[11px] text-slate-300 mt-0.5">
-                {submittedBanner.offline
-                  ? `Report saved locally in browser buffer. Will automatically push to Verification Center when connectivity returns (${offlineQueue.length} in queue).`
-                  : 'Report submitted directly to the Human + AI Verification Center as "Pending Verification".'}
+              <p className="text-[11px] text-slate-300 mt-0.5 font-medium">
+                {submittedBanner.message}
               </p>
             </div>
           </div>
@@ -331,7 +350,7 @@ export const IncidentReportingView: React.FC = () => {
             </div>
             <div>
               <label className="text-[11px] font-bold text-slate-300 uppercase block mb-1">GPS Telemetry</label>
-              <div className="flex gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <input
                   type="text"
                   readOnly
@@ -341,10 +360,11 @@ export const IncidentReportingView: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleAutoGPS}
-                  className="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors"
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-bold border border-slate-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
                   title="Simulate Mobile GPS Auto-Fix"
                 >
-                  <MapPin className="w-3.5 h-3.5" />
+                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Use Simulated GPS</span>
                 </button>
               </div>
             </div>
@@ -362,11 +382,23 @@ export const IncidentReportingView: React.FC = () => {
             />
           </div>
 
-          {/* Photo Selector */}
-          <div>
-            <label className="text-[11px] font-bold text-slate-300 uppercase block mb-1.5">
-              Field Evidence Photo (Camera Simulation)
-            </label>
+          {/* Photo Selector & Upload */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase block">
+                Field Evidence Photo (Upload or Select Preset)
+              </label>
+              <label className="cursor-pointer text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload Custom Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {SAMPLE_PHOTOS.map((p, i) => (
                 <div
@@ -387,9 +419,9 @@ export const IncidentReportingView: React.FC = () => {
           <div className="pt-2 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[11px]">
               {isOnline ? (
-                <span className="text-emerald-400 flex items-center gap-1">
+                <span className="text-emerald-400 flex items-center gap-1 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  Direct Online Upload
+                  Online Gateway Active
                 </span>
               ) : (
                 <span className="text-amber-400 flex items-center gap-1 font-bold">
@@ -408,7 +440,10 @@ export const IncidentReportingView: React.FC = () => {
               }`}
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isOnline ? 'Transmit Report to Verification Center' : 'Save Offline to Local Queue'}</span>
+              <span>Submit Incident Report</span>
+              <span className="text-[10px] opacity-80 px-1.5 py-0.5 rounded bg-black/20 font-mono">
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </button>
           </div>
         </form>

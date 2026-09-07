@@ -45,7 +45,7 @@ const MainLayout: React.FC = () => {
             </div>
           )}
           {activeTab === 'prediction' && <HazardPredictionView />}
-          {activeTab === 'reporting' && <IncidentReportingView />}
+          {(activeTab === 'report' || activeTab === 'reporting') && <IncidentReportingView />}
           {activeTab === 'verification' && <VerificationCenterView />}
           {activeTab === 'score' && <AccessibilityScoreView />}
           {activeTab === 'routes' && <RouteIntelligenceView />}

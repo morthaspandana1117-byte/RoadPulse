@@ -159,6 +159,7 @@ export interface AlertItem {
   description: string;
   recommendedAction: string;
   acknowledged: boolean;
+  resolved?: boolean;
 }
 
 export interface LearningRecord {

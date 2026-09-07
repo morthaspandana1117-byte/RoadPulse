@@ -25,6 +25,7 @@ export type ActiveTab =
   | 'map'
   | 'prediction'
   | 'report'
+  | 'reporting'
   | 'verification'
   | 'score'
   | 'routes'
@@ -79,6 +80,7 @@ interface RoadPulseContextType {
   markReportUncertain: (reportId: string) => void;
   rerouteVehicle: (vehicleId: string, newRouteId?: string) => void;
   acknowledgeAlert: (alertId: string) => void;
+  resolveAlert: (alertId: string) => void;
   
   // Scenario Walkthrough State & Controls
   scenarioStep: number;
@@ -114,9 +116,25 @@ export const RoadPulseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [userRole, setUserRole] = useState<UserRole>('command_center');
   const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [offlineQueue, setOfflineQueue] = useState<IncidentReport[]>([]);
+  const [offlineQueue, setOfflineQueue] = useState<IncidentReport[]>(() => {
+    try {
+      const saved = localStorage.getItem('roadpulse_offline_queue');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncProgress, setSyncProgress] = useState<number>(0);
+
+  // Synchronize offline queue to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('roadpulse_offline_queue', JSON.stringify(offlineQueue));
+    } catch (e) {
+      console.error('Failed to sync offline queue to localStorage', e);
+    }
+  }, [offlineQueue]);
 
   const [roadSegments, setRoadSegments] = useState<RoadSegment[]>(INITIAL_ROAD_SEGMENTS);
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>('seg-nh6-ratacherra');
@@ -466,6 +484,11 @@ export const RoadPulseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, acknowledged: true } : a));
   };
 
+  // Resolve Alert
+  const resolveAlert = (alertId: string) => {
+    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, resolved: true, acknowledged: true } : a));
+  };
+
   // SIH 26002 16-Step Scenario Execution
   const runScenarioStep = (step: number) => {
     setScenarioStep(step);
@@ -654,6 +677,7 @@ export const RoadPulseProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         markReportUncertain,
         rerouteVehicle,
         acknowledgeAlert,
+        resolveAlert,
         scenarioStep,
         isScenarioRunning,
         startScenario,
