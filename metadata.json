@@ -1,0 +1,6 @@
+{
+  "name": "RoadPulse - NER Accessibility & Logistics Intelligence",
+  "description": "AI-based smart logistics and accessibility intelligence platform for the North Eastern Region of India (SIH26002), providing hazard prediction, ground incident fusion, dynamic scoring, and safe routing.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
